@@ -37,7 +37,7 @@
             </button>
 
             <button onclick="openGithubModal()" id="ghBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-3.5 py-2 rounded-2xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs md:text-sm">
-                <span>⚙️ GitHub Ayarı</span>
+                <span>⚙️ GitHub</span>
             </button>
         </div>
     </div>
@@ -50,95 +50,107 @@
     <!-- Bildirim Mesajı (Toast) -->
     <div id="toast" style="z-index: 3000;" class="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 bg-gray-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs md:text-sm text-center font-medium hidden transition-all"></div>
 
-    <!-- GitHub Ayarları Modalı (Sadece 1 kez doldurulur, telefona kaydedilir) -->
+    <!-- GitHub Ayarları Modalı -->
     <div id="ghModal" style="z-index: 2500;" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">☁️ GitHub Otomatik Kayıt Ayarı</h3>
-            <p class="text-xs text-gray-500 mb-4">Bu bilgiler sadece senin telefonunun hafızasında saklanır. Kaydettiğin noktalar doğrudan GitHub'daki <b>data/veriler.js</b> dosyasına yazılır.</p>
-            <div class="space-y-3">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl max-h-[82dvh] flex flex-col">
+            <h3 class="text-base font-bold text-gray-900 mb-1">☁️ GitHub Otomatik Kayıt Ayarı</h3>
+            <p class="text-xs text-gray-500 mb-3">Bu bilgiler sadece telefonunun hafızasında saklanır. Kaydettiğin noktalar doğrudan GitHub'daki <b>data/veriler.js</b> dosyasına yazılır.</p>
+            <div class="space-y-2.5 overflow-y-auto flex-1 pr-1">
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">GitHub Kullanıcı Adın</label>
-                    <input type="text" id="ghOwner" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="Örn: tameryildirim">
+                    <input type="text" id="ghOwner" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="Örn: 72yildirim-sketch">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Depo (Repository) Adı</label>
-                    <input type="text" id="ghRepo" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="Örn: candarli-harita">
+                    <input type="text" id="ghRepo" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="Örn: candarli">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">GitHub Token (Şifren)</label>
                     <input type="password" id="ghToken" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="ghp_xxxxxxxxxxxx">
                 </div>
-                <div class="flex space-x-2 pt-2">
-                    <button type="button" onclick="closeGithubModal()" class="flex-1 bg-gray-100 text-gray-800 font-semibold py-2.5 rounded-xl text-sm">Kapat</button>
-                    <button type="button" onclick="saveGithubConfig()" class="flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet ve Bağla</button>
-                </div>
+            </div>
+            <div class="flex space-x-2 pt-3 mt-2 border-t border-gray-100 shrink-0">
+                <button type="button" onclick="closeGithubModal()" class="flex-1 bg-gray-100 text-gray-800 font-semibold py-2.5 rounded-xl text-sm">Kapat</button>
+                <button type="button" onclick="saveGithubConfig()" class="flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet ve Bağla</button>
             </div>
         </div>
     </div>
 
-    <!-- Ekleme & Düzenleme Modalı -->
-    <div id="modal" style="z-index: 2000;" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
-            <h3 id="modalTitle" class="text-lg font-bold text-gray-900 mb-3">Yeni Keşif Noktası Ekle</h3>
-            <form id="pointForm" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Başlık</label>
-                    <input type="text" id="pointTitle" required class="w-full px-3.5 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Örn: Çandarlı Kütüphanesi">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
-                    <select id="pointCategory" class="w-full px-3.5 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-                        <option value="Manzara">🔵 Manzara</option>
-                        <option value="Tarihi Bina / Kale">🟡 Tarihi Bina / Kale</option>
-                        <option value="Yerel İşletme / Esnaf">🟢 Yerel İşletme / Esnaf</option>
-                        <option value="Resmi Kurum">🔴 Resmi Kurum</option>
-                        <option value="Eğitim / Kültür">🟣 Eğitim / Kültür</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Fotoğraf Ekle (Otomatik Sıkıştırılır)</label>
+    <!-- Ekleme & Düzenleme Modalı (Sabit Üst Başlık ve Sabit Alt Butonlu) -->
+    <div id="modal" style="z-index: 2000;" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl flex flex-col overflow-hidden" style="max-height: 82dvh;">
+            
+            <!-- Sabit Üst Başlık -->
+            <div class="px-5 py-3.5 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <h3 id="modalTitle" class="text-base md:text-lg font-bold text-gray-900">Yeni Keşif Noktası Ekle</h3>
+                <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none px-1">&times;</button>
+            </div>
+
+            <!-- Kaydırılabilir Orta Form Alanı -->
+            <form id="pointForm" class="flex flex-col flex-1 overflow-hidden">
+                <div class="p-4 space-y-3 overflow-y-auto flex-1">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Başlık</label>
+                        <input type="text" id="pointTitle" required class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Örn: Çandarlı Kütüphanesi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
+                        <select id="pointCategory" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white">
+                            <option value="Manzara">🔵 Manzara</option>
+                            <option value="Tarihi Bina / Kale">🟡 Tarihi Bina / Kale</option>
+                            <option value="Yerel İşletme / Esnaf">🟢 Yerel İşletme / Esnaf</option>
+                            <option value="Resmi Kurum">🔴 Resmi Kurum</option>
+                            <option value="Eğitim / Kültür">🟣 Eğitim / Kültür</option>
+                        </select>
+                    </div>
                     
-                    <div id="currentPhotoPreview" class="hidden mb-2.5 flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
-                        <img id="previewImg" src="" class="h-14 w-18 rounded-lg object-cover border border-gray-300">
-                        <div class="flex-1 min-w-0">
-                            <p id="photoStatusText" class="text-xs font-semibold text-emerald-700 truncate">Fotoğraf Hazır</p>
-                            <button type="button" onclick="clearSelectedPhoto()" class="text-xs text-red-600 hover:underline mt-0.5">Fotoğrafı Kaldır</button>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Fotoğraf Ekle (Otomatik Sıkıştırılır)</label>
+                        
+                        <div id="currentPhotoPreview" class="hidden mb-2 flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                            <img id="previewImg" src="" class="h-12 w-16 rounded-lg object-cover border border-gray-300 shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <p id="photoStatusText" class="text-xs font-semibold text-emerald-700 truncate">Fotoğraf Hazır</p>
+                                <button type="button" onclick="clearSelectedPhoto()" class="text-xs text-red-600 hover:underline mt-0.5">Fotoğrafı Kaldır</button>
+                            </div>
+                        </div>
+
+                        <div id="liveCameraBox" class="hidden mb-2.5 bg-black rounded-2xl overflow-hidden relative">
+                            <video id="cameraVideo" autoplay playsinline class="w-full h-40 object-cover"></video>
+                            <div class="p-2 bg-gray-900 flex justify-between items-center">
+                                <button type="button" onclick="stopLiveCamera()" class="text-xs text-gray-300 px-3 py-1">Kapat</button>
+                                <button type="button" onclick="takeSnapshot()" class="bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-xl">📸 Çek</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <label for="pointPhotoFile" class="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-blue-50 text-blue-700 font-semibold text-xs md:text-sm cursor-pointer border border-blue-200">
+                                <span>📁</span>
+                                <span>Dosya Seç</span>
+                            </label>
+                            <input type="file" id="pointPhotoFile" accept="image/*" class="hidden" onchange="handlePhotoInput(this, 'Galeriden seçildi')">
+
+                            <button type="button" onclick="triggerCamera()" class="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs md:text-sm cursor-pointer border border-emerald-200">
+                                <span>📷</span>
+                                <span>Fotoğraf Çek</span>
+                            </button>
+                            <input type="file" id="pointPhotoCamera" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoInput(this, 'Kameradan çekildi')">
                         </div>
                     </div>
 
-                    <div id="liveCameraBox" class="hidden mb-3 bg-black rounded-2xl overflow-hidden relative">
-                        <video id="cameraVideo" autoplay playsinline class="w-full h-44 object-cover"></video>
-                        <div class="p-2 bg-gray-900 flex justify-between items-center">
-                            <button type="button" onclick="stopLiveCamera()" class="text-xs text-gray-300 px-3 py-1">Kapat</button>
-                            <button type="button" onclick="takeSnapshot()" class="bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-xl">📸 Çek</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <label for="pointPhotoFile" class="flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-blue-50 text-blue-700 font-semibold text-xs md:text-sm cursor-pointer border border-blue-200">
-                            <span>📁</span>
-                            <span>Dosya Seç</span>
-                        </label>
-                        <input type="file" id="pointPhotoFile" accept="image/*" class="hidden" onchange="handlePhotoInput(this, 'Galeriden seçildi')">
-
-                        <button type="button" onclick="triggerCamera()" class="flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs md:text-sm cursor-pointer border border-emerald-200">
-                            <span>📷</span>
-                            <span>Fotoğraf Çek</span>
-                        </button>
-                        <input type="file" id="pointPhotoCamera" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoInput(this, 'Kameradan çekildi')">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Açıklama</label>
+                        <textarea id="pointDesc" rows="2" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Burası hakkında kısa bir bilgi..."></textarea>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Açıklama</label>
-                    <textarea id="pointDesc" rows="3" class="w-full px-3.5 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Burası hakkında kısa bir bilgi..."></textarea>
-                </div>
-                <div class="flex space-x-2 pt-1">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-800 font-semibold py-2.5 rounded-xl text-sm">İptal</button>
-                    <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet</button>
+                <!-- Sabit Alt Butonlar (Her zaman görünür) -->
+                <div class="p-3.5 bg-gray-50 border-t border-gray-200 flex space-x-2.5 shrink-0">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white border border-gray-300 text-gray-800 font-semibold py-2.5 rounded-xl text-sm shadow-sm">İptal</button>
+                    <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm shadow-md">Kaydet</button>
                 </div>
             </form>
+
         </div>
     </div>
 
@@ -250,18 +262,17 @@
                 const btn = document.getElementById('ghBtn');
                 btn.classList.remove('bg-gray-800');
                 btn.classList.add('bg-emerald-600');
-                btn.innerHTML = '<span>☁️ GitHub Aktif</span>';
+                btn.innerHTML = '<span>☁️ Aktif</span>';
             }
         }
         updateGhButtonStatus();
 
-        // Verileri UTF-8 uyumlu Base64 formatında doğrudan GitHub'daki data/veriler.js dosyasına yazar
         async function pushToGithub() {
             const owner = localStorage.getItem('gh_owner');
             const repo = localStorage.getItem('gh_repo');
             const token = localStorage.getItem('gh_token');
             if (!owner || !repo || !token) {
-                showToast("⚠️ Yerel hafızaya kaydedildi. GitHub'a göndermek için sağ üstten 'GitHub Ayarı'nı yapın.");
+                showToast("⚠️ Yerel hafızaya kaydedildi. GitHub'a göndermek için sağ üstten 'GitHub' ayarını yapın.");
                 return;
             }
 
@@ -270,7 +281,6 @@
             const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
             try {
-                // Mevcut dosyanın SHA bilgisini al
                 let sha = null;
                 const getRes = await fetch(apiUrl, {
                     headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
@@ -347,7 +357,6 @@
         };
 
         window.triggerCamera = async function() {
-            // Mobil cihazlarda doğrudan telefonun kendi kamera uygulamasını açmak daha net fotoğraf çeker
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             if (isMobile) {
                 document.getElementById('pointPhotoCamera').click();
@@ -561,7 +570,6 @@
             loadPoints();
             if (markersMap[targetId]) markersMap[targetId].marker.openPopup();
             
-            // Doğrudan GitHub'daki data/veriler.js dosyasına yaz!
             await pushToGithub();
         });
 
@@ -577,6 +585,6 @@
 
         loadPoints();
     </script>
-    <script src="data/veriler.js?v=1" onload="if(window.CANDARLI_DATA){localStorage.setItem('candarli_points', JSON.stringify(window.CANDARLI_DATA)); loadPoints();}"></script>
+    <script src="data/veriler.js?v=2" onload="if(window.CANDARLI_DATA){localStorage.setItem('candarli_points', JSON.stringify(window.CANDARLI_DATA)); loadPoints();}"></script>
 </body>
 </html>
