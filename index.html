@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Başlangıç verisini yükle -->
     <script src="data/veriler.js" onerror="console.log('veriler.js yüklenemedi.')"></script>
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #cbd5e1; }
@@ -66,7 +67,7 @@
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 6000);
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
         }
 
         function getCategoryColor(category) {
@@ -94,15 +95,10 @@
             });
         }
 
+        // Noktaları doğrudan hafızadan (memory) veya veriler.js'den okur, localStorage kullanmaz
         function getStoredPoints() {
             try {
-                const data = localStorage.getItem('candarli_user_points');
-                if (data) {
-                    const parsed = JSON.parse(data);
-                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-                }
                 if (window.CANDARLI_DATA && Array.isArray(window.CANDARLI_DATA)) {
-                    localStorage.setItem('candarli_user_points', JSON.stringify(window.CANDARLI_DATA));
                     return window.CANDARLI_DATA;
                 }
                 return [];
@@ -125,7 +121,7 @@
                 
                 marker.bindPopup(
                     '<div class="w-64">' +
-                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-40 object-cover">' + '</div>' : '') +
+                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-40 object-cover"></div>' : '') +
                     '<div class="p-3.5">' +
                     '<span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background-color: ' + color + '20; color: ' + color + '">' + (p.category || 'Genel') + '</span>' +
                     '<h3 class="font-bold text-gray-900 mt-2 text-base">' + (p.title || 'İsimsiz Nokta') + '</h3>' +
@@ -138,23 +134,21 @@
             });
         }
 
-        // --- HATA AYIKLAMALI FETCH SİSTEMİ ---
+        // GitHub'daki veriler.js dosyasını doğrudan belleğe çeker (Kota hatası vermez)
         window.syncFromDataFolder = async function() {
             const btn = document.getElementById('syncBtn');
             btn.innerHTML = '<span>⏳ Yükleniyor...</span>';
 
             try {
                 const response = await fetch('data/veriler.js?t=' + Date.now());
-                if (!response.ok) {
-                    throw new Error('Dosya bulunamadı (HTTP ' + response.status + ')');
-                }
+                if (!response.ok) throw new Error('Dosya bulunamadı (HTTP ' + response.status + ')');
 
                 const text = await response.text();
                 const cleanJson = text.replace(/^window\.CANDARLI_DATA\s*=\s*/, '').replace(/;\s*$/, '');
                 const points = JSON.parse(cleanJson);
 
                 if (Array.isArray(points)) {
-                    localStorage.setItem('candarli_user_points', JSON.stringify(points));
+                    window.CANDARLI_DATA = points;
                     loadPoints();
                     showToast("✅ Harita güncellendi! (" + points.length + " nokta yüklendi)");
                 } else {
@@ -162,7 +156,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                showToast("❌ Hata Detayı: " + err.message);
+                showToast("❌ Hata: " + err.message);
             } finally {
                 btn.innerHTML = '<span>🔄 Güncelle</span>';
             }
