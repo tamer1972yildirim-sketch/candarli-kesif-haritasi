@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>YÖNETİCİ - Çandarlı Keşif Haritası</title>
+    <title>YÖNETİCİ - Çandarlı Haritası</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- SADECE GÜVENLİ CLOUDFLARE CDN KULLANILDI (Engellenmez) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #cbd5e1; }
-        #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         .custom-popup .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
         .custom-popup .leaflet-popup-content { margin: 0; }
         .custom-flag-icon { background: transparent; border: none; }
@@ -18,49 +19,51 @@
 </head>
 <body class="font-sans">
 
+    <!-- Harita Alanı -->
     <div id="map"></div>
 
-    <!-- Mobil Uyumlu Düzenli Üst Bar (İki Satırlı Yapı) -->
-    <div style="z-index: 1000;" class="fixed top-3 left-3 right-3 flex flex-col gap-2 pointer-events-none">
-        <!-- 1. Satır: Başlık ve GitHub Ayarı -->
-        <div class="flex justify-between items-center">
-            <div class="bg-amber-500/95 text-white backdrop-blur-md px-3.5 py-1.5 rounded-2xl shadow-xl pointer-events-auto flex items-center space-x-2 border border-amber-400">
+    <!-- Mobil Uyumlu Düzenli Üst Bar (Asla Alt Alta Binmez) -->
+    <div style="z-index: 1000;" class="fixed top-3 left-3 right-3 flex flex-col gap-2.5 pointer-events-none">
+        
+        <!-- 1. Satır: Başlık ve GitHub -->
+        <div class="flex justify-between items-center w-full">
+            <div class="bg-amber-500/95 text-white backdrop-blur-md px-3.5 py-1.5 rounded-xl shadow-xl pointer-events-auto flex items-center space-x-2 border border-amber-400">
                 <span class="text-lg">🛠️</span>
-                <h1 class="font-bold text-xs md:text-sm">Çandarlı Yönetici</h1>
+                <h1 class="font-bold text-sm">Yönetici Paneli</h1>
             </div>
             
-            <button onclick="openGithubModal()" id="ghBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-3 py-1.5 rounded-2xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs pointer-events-auto">
+            <button onclick="openGithubModal()" id="ghBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-3 py-1.5 rounded-xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs pointer-events-auto">
                 <span>⚙️ GitHub</span>
             </button>
         </div>
 
-        <!-- 2. Satır: Arama ve Ekle Butonu -->
-        <div class="flex items-center gap-2 pointer-events-auto">
+        <!-- 2. Satır: Arama ve Ekle -->
+        <div class="flex justify-between items-center w-full gap-2 pointer-events-auto">
             <div class="relative flex-1">
-                <input type="text" id="searchInput" placeholder="Haritada yer ara..." oninput="handleSearch(this.value)" class="w-full bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-gray-200 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                <div id="searchDropdown" class="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 hidden overflow-hidden max-h-60 overflow-y-auto" style="z-index: 2000;"></div>
+                <input type="text" id="searchInput" placeholder="Haritada yer ara..." oninput="handleSearch(this.value)" class="w-full bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                <div id="searchDropdown" class="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-gray-100 hidden overflow-hidden max-h-48 overflow-y-auto" style="z-index: 2000;"></div>
             </div>
 
-            <button onclick="activateAddMode()" id="addBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-2xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs md:text-sm shrink-0">
-                <span>+ Nokta Ekle</span>
+            <button onclick="activateAddMode()" id="addBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow-lg transition flex items-center space-x-1 cursor-pointer text-sm shrink-0">
+                <span>+ Ekle</span>
             </button>
         </div>
     </div>
 
     <!-- Bilgi Banner -->
-    <div id="instructionBanner" style="z-index: 1000;" class="fixed top-28 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-5 py-2.5 rounded-xl text-xs md:text-sm shadow-lg hidden pointer-events-none whitespace-nowrap">
+    <div id="instructionBanner" style="z-index: 1000;" class="fixed top-28 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-5 py-2.5 rounded-xl text-xs shadow-lg hidden pointer-events-none whitespace-nowrap">
         Haritada bayrak dikmek istediğin yere dokun 🚩
     </div>
 
     <!-- Bildirim Mesajı (Toast) -->
-    <div id="toast" style="z-index: 3000;" class="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 bg-gray-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs md:text-sm text-center font-medium hidden transition-all"></div>
+    <div id="toast" style="z-index: 3000;" class="fixed bottom-6 left-4 right-4 bg-gray-900/95 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs text-center font-medium hidden transition-all"></div>
 
     <!-- GitHub Ayarları Modalı -->
     <div id="ghModal" style="z-index: 2500;" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl max-h-[82dvh] flex flex-col">
-            <h3 class="text-base font-bold text-gray-900 mb-1">☁️ GitHub Otomatik Kayıt Ayarı</h3>
-            <p class="text-xs text-gray-500 mb-3">Bu bilgiler sadece telefonunun hafızasında saklanır. Kaydettiğin noktalar doğrudan GitHub'daki <b>data/veriler.js</b> dosyasına yazılır.</p>
-            <div class="space-y-2.5 overflow-y-auto flex-1 pr-1">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl">
+            <h3 class="text-base font-bold text-gray-900 mb-1">☁️ GitHub Otomatik Kayıt</h3>
+            <p class="text-xs text-gray-500 mb-3">Bu bilgiler telefonda saklanır.</p>
+            <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">GitHub Kullanıcı Adın</label>
                     <input type="text" id="ghOwner" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="tamer1972yildirim-sketch">
@@ -74,27 +77,27 @@
                     <input type="password" id="ghToken" class="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm" placeholder="ghp_xxxxxxxxxxxx">
                 </div>
             </div>
-            <div class="flex space-x-2 pt-3 mt-2 border-t border-gray-100 shrink-0">
+            <div class="flex space-x-2 pt-4">
                 <button type="button" onclick="closeGithubModal()" class="flex-1 bg-gray-100 text-gray-800 font-semibold py-2.5 rounded-xl text-sm">Kapat</button>
-                <button type="button" onclick="saveGithubConfig()" class="flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet ve Bağla</button>
+                <button type="button" onclick="saveGithubConfig()" class="flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet</button>
             </div>
         </div>
     </div>
 
     <!-- Ekleme & Düzenleme Modalı -->
     <div id="modal" style="z-index: 2000;" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3">
-        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl flex flex-col overflow-hidden" style="max-height: 82dvh;">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl flex flex-col overflow-hidden" style="max-height: 85dvh;">
             
-            <div class="px-5 py-3.5 border-b border-gray-100 flex justify-between items-center shrink-0">
-                <h3 id="modalTitle" class="text-base md:text-lg font-bold text-gray-900">Yeni Keşif Noktası Ekle</h3>
-                <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none px-1">&times;</button>
+            <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <h3 id="modalTitle" class="text-base font-bold text-gray-900">Nokta Ekle</h3>
+                <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">&times;</button>
             </div>
 
             <form id="pointForm" class="flex flex-col flex-1 overflow-hidden">
                 <div class="p-4 space-y-3 overflow-y-auto flex-1">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Başlık</label>
-                        <input type="text" id="pointTitle" required class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Örn: Çandarlı Kütüphanesi">
+                        <input type="text" id="pointTitle" required class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
@@ -108,34 +111,32 @@
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Fotoğraf Ekle (Otomatik Sıkıştırılır)</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Fotoğraf</label>
                         
                         <div id="currentPhotoPreview" class="hidden mb-2 flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
                             <img id="previewImg" src="" class="h-12 w-16 rounded-lg object-cover border border-gray-300 shrink-0">
                             <div class="flex-1 min-w-0">
                                 <p id="photoStatusText" class="text-xs font-semibold text-emerald-700 truncate">Fotoğraf Hazır</p>
-                                <button type="button" onclick="clearSelectedPhoto()" class="text-xs text-red-600 hover:underline mt-0.5">Fotoğrafı Kaldır</button>
+                                <button type="button" onclick="clearSelectedPhoto()" class="text-xs text-red-600 hover:underline mt-0.5">Kaldır</button>
                             </div>
                         </div>
 
-                        <div id="liveCameraBox" class="hidden mb-2.5 bg-black rounded-2xl overflow-hidden relative">
-                            <video id="cameraVideo" autoplay playsinline class="w-full h-40 object-cover"></video>
+                        <div id="liveCameraBox" class="hidden mb-2 bg-black rounded-2xl overflow-hidden relative">
+                            <video id="cameraVideo" autoplay playsinline class="w-full h-32 object-cover"></video>
                             <div class="p-2 bg-gray-900 flex justify-between items-center">
-                                <button type="button" onclick="stopLiveCamera()" class="text-xs text-gray-300 px-3 py-1">Kapat</button>
+                                <button type="button" onclick="stopLiveCamera()" class="text-xs text-gray-300 px-3 py-1">İptal</button>
                                 <button type="button" onclick="takeSnapshot()" class="bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-xl">📸 Çek</button>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <label for="pointPhotoFile" class="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-blue-50 text-blue-700 font-semibold text-xs md:text-sm cursor-pointer border border-blue-200">
-                                <span>📁</span>
-                                <span>Dosya Seç</span>
+                            <label for="pointPhotoFile" class="flex items-center justify-center space-x-1.5 py-2 px-2 rounded-xl bg-blue-50 text-blue-700 font-semibold text-xs cursor-pointer border border-blue-200">
+                                <span>📁</span><span>Galeri</span>
                             </label>
                             <input type="file" id="pointPhotoFile" accept="image/*" class="hidden" onchange="handlePhotoInput(this, 'Galeriden seçildi')">
 
-                            <button type="button" onclick="triggerCamera()" class="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs md:text-sm cursor-pointer border border-emerald-200">
-                                <span>📷</span>
-                                <span>Fotoğraf Çek</span>
+                            <button type="button" onclick="triggerCamera()" class="flex items-center justify-center space-x-1.5 py-2 px-2 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs cursor-pointer border border-emerald-200">
+                                <span>📷</span><span>Kamera</span>
                             </button>
                             <input type="file" id="pointPhotoCamera" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoInput(this, 'Kameradan çekildi')">
                         </div>
@@ -143,27 +144,24 @@
 
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Açıklama</label>
-                        <textarea id="pointDesc" rows="2" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Burası hakkında kısa bir bilgi..."></textarea>
+                        <textarea id="pointDesc" rows="2" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
                     </div>
                 </div>
 
-                <div class="p-3.5 bg-gray-50 border-t border-gray-200 flex space-x-2.5 shrink-0">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-white border border-gray-300 text-gray-800 font-semibold py-2.5 rounded-xl text-sm shadow-sm">İptal</button>
-                    <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm shadow-md">Kaydet</button>
+                <div class="p-3 bg-gray-50 border-t border-gray-200 flex space-x-2 shrink-0">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white border border-gray-300 text-gray-800 font-semibold py-2.5 rounded-xl text-sm">İptal</button>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm">Kaydet</button>
                 </div>
             </form>
-
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        if (typeof L === 'undefined') {
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>');
-        }
-    </script>
+        // Hata yakalayıcı (Ekranda hata olursa gösterir)
+        window.onerror = function(msg, url, line) {
+            showToast("Hata: " + msg);
+        };
 
-    <script>
         const DEFAULT_OWNER = "tamer1972yildirim-sketch";
         const DEFAULT_REPO = "candarli-kesif-haritasi";
 
@@ -175,7 +173,7 @@
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         L.control.layers({ "Uydu + Sokak (Google)": googleHybrid, "Saf Uydu (Esri)": esriSatellite, "Sokak (OSM)": osmStreet }, null, { position: 'bottomleft' }).addTo(map);
 
-        setTimeout(() => { map.invalidateSize(); }, 200);
+        setTimeout(() => { map.invalidateSize(); }, 300);
 
         let markersLayer = L.layerGroup().addTo(map);
         let markersMap = {}; 
@@ -229,9 +227,7 @@
                     return window.CANDARLI_DATA;
                 }
                 return [];
-            } catch (e) {
-                return [];
-            }
+            } catch (e) { return []; }
         }
 
         window.openGithubModal = function() {
@@ -250,7 +246,7 @@
             const repo = document.getElementById('ghRepo').value.trim() || DEFAULT_REPO;
             const token = document.getElementById('ghToken').value.trim();
             if (!token) {
-                alert("Lütfen GitHub Token (şifrenizi) girin.");
+                alert("Lütfen GitHub Token girin.");
                 return;
             }
             localStorage.setItem('gh_owner', owner);
@@ -276,11 +272,11 @@
             const repo = localStorage.getItem('gh_repo') || DEFAULT_REPO;
             const token = localStorage.getItem('gh_token');
             if (!token) {
-                showToast("⚠️ GitHub Token eksik! Lütfen 'GitHub' ayarından token girin.");
+                showToast("⚠️ GitHub Token eksik! 'GitHub' ayarından token girin.");
                 return;
             }
 
-            showToast("⏳ GitHub'daki data/veriler.js güncelleniyor...");
+            showToast("⏳ GitHub güncelleniyor...");
             const path = "data/veriler.js";
             const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
@@ -299,7 +295,7 @@
                 const base64Content = btoa(unescape(encodeURIComponent(jsContent)));
 
                 const bodyObj = {
-                    message: "Harita verileri güncellendi (" + points.length + " nokta)",
+                    message: "Harita güncellendi (" + points.length + " nokta)",
                     content: base64Content
                 };
                 if (sha) bodyObj.sha = sha;
@@ -315,12 +311,12 @@
                 });
 
                 if (putRes.ok) {
-                    showToast("✅ Harika! GitHub'daki data/veriler.js otomatik güncellendi!");
+                    showToast("✅ GitHub başarıyla güncellendi!");
                 } else {
-                    showToast("❌ GitHub yazma hatası! Token veya repo adını kontrol edin.");
+                    showToast("❌ Hata! Token veya repo adını kontrol edin.");
                 }
             } catch (err) {
-                showToast("❌ Bağlantı hatası: " + err.message);
+                showToast("❌ Bağlantı hatası.");
             }
         }
 
@@ -333,12 +329,8 @@
                     const MAX_WIDTH = 800;
                     let width = img.width;
                     let height = img.height;
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     callback(canvas.toDataURL('image/jpeg', 0.72));
@@ -391,18 +383,13 @@
             if (!video.videoWidth) return;
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 800;
-            let width = video.videoWidth;
-            let height = video.videoHeight;
-            if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-            }
-            canvas.width = width;
-            canvas.height = height;
+            let width = video.videoWidth; let height = video.videoHeight;
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            canvas.width = width; canvas.height = height;
             canvas.getContext('2d').drawImage(video, 0, 0, width, height);
             currentCompressedPhoto = canvas.toDataURL('image/jpeg', 0.75);
             document.getElementById('previewImg').src = currentCompressedPhoto;
-            document.getElementById('photoStatusText').innerText = '✅ Kameradan çekildi';
+            document.getElementById('photoStatusText').innerText = '✅ Çekildi';
             document.getElementById('currentPhotoPreview').classList.remove('hidden');
             stopLiveCamera();
         };
@@ -426,15 +413,15 @@
 
                 const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(markersLayer);
                 marker.bindPopup(
-                    '<div class="w-64">' +
-                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-36 object-cover">' : '') +
+                    '<div class="w-60">' +
+                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-32 object-cover">' : '') +
                     '<div class="p-3">' +
                     '<span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background-color: ' + color + '20; color: ' + color + '">' + (p.category || 'Genel') + '</span>' +
-                    '<h3 class="font-bold text-gray-900 mt-1.5 text-base">' + (p.title || 'İsimsiz Nokta') + '</h3>' +
+                    '<h3 class="font-bold text-gray-900 mt-1 text-sm">' + (p.title || 'İsimsiz Nokta') + '</h3>' +
                     '<p class="text-xs text-gray-600 mt-1">' + (p.desc || '') + '</p>' +
-                    '<div class="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">' +
-                    '<button onclick="editPoint(' + p.id + ')" class="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">✏️ Düzenle</button>' +
-                    '<button onclick="deletePoint(' + p.id + ')" class="text-xs text-red-600 hover:text-red-800 font-semibold cursor-pointer">🗑️ Noktayı Sil</button>' +
+                    '<div class="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">' +
+                    '<button onclick="editPoint(' + p.id + ')" class="text-xs text-blue-600 font-semibold cursor-pointer">✏️ Düzenle</button>' +
+                    '<button onclick="deletePoint(' + p.id + ')" class="text-xs text-red-600 font-semibold cursor-pointer">🗑️ Sil</button>' +
                     '</div></div></div>',
                     { className: 'custom-popup' }
                 );
@@ -457,14 +444,14 @@
             );
 
             if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="p-3 text-xs text-gray-500 text-center">Kayıtlı yer bulunamadı</div>';
+                dropdown.innerHTML = '<div class="p-3 text-xs text-gray-500 text-center">Bulunamadı</div>';
                 dropdown.classList.remove('hidden');
                 return;
             }
 
             filtered.forEach(p => {
                 const item = document.createElement('div');
-                item.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition text-sm';
+                item.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 text-sm';
                 item.innerHTML = '<div class="font-bold text-gray-800">🚩 ' + p.title + '</div><div class="text-xs font-medium mt-0.5" style="color: ' + getCategoryColor(p.category) + '">' + p.category + '</div>';
                 item.onclick = function() {
                     map.setView([p.lat, p.lng], 18);
@@ -499,9 +486,9 @@
             currentCompressedPhoto = null;
             document.getElementById('instructionBanner').classList.add('hidden');
             document.getElementById('addBtn').classList.remove('bg-green-600');
-            document.getElementById('addBtn').innerHTML = '<span>+ Nokta Ekle</span>';
+            document.getElementById('addBtn').innerHTML = '<span>+ Ekle</span>';
             
-            document.getElementById('modalTitle').innerText = 'Yeni Keşif Noktası Ekle';
+            document.getElementById('modalTitle').innerText = 'Nokta Ekle';
             document.getElementById('currentPhotoPreview').classList.add('hidden');
             document.getElementById('pointForm').reset();
             document.getElementById('modal').classList.remove('hidden');
@@ -514,7 +501,7 @@
 
             editingPointId = id;
             currentCompressedPhoto = null;
-            document.getElementById('modalTitle').innerText = 'Yer Bilgisini Düzenle';
+            document.getElementById('modalTitle').innerText = 'Düzenle';
             document.getElementById('pointTitle').value = point.title || '';
             document.getElementById('pointCategory').value = point.category || 'Manzara';
             document.getElementById('pointDesc').value = point.desc || '';
@@ -554,19 +541,13 @@
             if (editingPointId !== null) {
                 points = points.map(p => {
                     if (p.id === editingPointId) {
-                        return { 
-                            id: p.id, lat: p.lat, lng: p.lng, title: title, category: category, desc: desc, 
-                            photo: currentCompressedPhoto !== null ? currentCompressedPhoto : p.photo 
-                        };
+                        return { id: p.id, lat: p.lat, lng: p.lng, title: title, category: category, desc: desc, photo: currentCompressedPhoto !== null ? currentCompressedPhoto : p.photo };
                     }
                     return p;
                 });
             } else {
                 targetId = Date.now();
-                points.push({ 
-                    id: targetId, lat: tempCoords.lat, lng: tempCoords.lng, title: title, category: category, desc: desc, 
-                    photo: currentCompressedPhoto || '' 
-                });
+                points.push({ id: targetId, lat: tempCoords.lat, lng: tempCoords.lng, title: title, category: category, desc: desc, photo: currentCompressedPhoto || '' });
             }
 
             localStorage.setItem('candarli_points', JSON.stringify(points));
@@ -578,7 +559,7 @@
         });
 
         window.deletePoint = async function(id) {
-            if (confirm("Bu noktayı silmek istediğinize emin misiniz?")) {
+            if (confirm("Silmek istediğinize emin misiniz?")) {
                 let points = getStoredPoints();
                 points = points.filter(p => p.id !== id);
                 localStorage.setItem('candarli_points', JSON.stringify(points));
@@ -589,6 +570,7 @@
 
         loadPoints();
     </script>
-    <script src="data/veriler.js?v=4" onload="if(window.CANDARLI_DATA){localStorage.setItem('candarli_points', JSON.stringify(window.CANDARLI_DATA)); loadPoints();}"></script>
+    <!-- Önbelleği (cache) kırmak için v değerini güncelledik -->
+    <script src="data/veriler.js?v=99" onload="if(window.CANDARLI_DATA){localStorage.setItem('candarli_points', JSON.stringify(window.CANDARLI_DATA)); loadPoints();}"></script>
 </body>
 </html>
