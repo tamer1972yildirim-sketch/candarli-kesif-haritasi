@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Başlangıç verisini güvenle yükle -->
     <script src="data/veriler.js" onerror="console.log('veriler.js yüklenemedi.')"></script>
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #cbd5e1; }
@@ -29,13 +28,11 @@
         </div>
         
         <div class="flex items-center space-x-1.5 pointer-events-auto">
-            <!-- Arama Kutusu -->
             <div class="relative">
                 <input type="text" id="searchInput" placeholder="Yer ara..." oninput="handleSearch(this.value)" class="bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-xl border border-gray-200 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 md:w-52 transition">
                 <div id="searchDropdown" class="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 hidden overflow-hidden max-h-60 overflow-y-auto" style="z-index: 2000;"></div>
             </div>
 
-            <!-- Güncelle Düğmesi -->
             <button onclick="syncFromDataFolder()" id="syncBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-2xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs md:text-sm">
                 <span>🔄 Güncelle</span>
             </button>
@@ -69,7 +66,7 @@
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+            setTimeout(() => { toast.classList.add('hidden'); }, 6000);
         }
 
         function getCategoryColor(category) {
@@ -128,7 +125,7 @@
                 
                 marker.bindPopup(
                     '<div class="w-64">' +
-                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-40 object-cover">' : '') +
+                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-40 object-cover">' + '</div>' : '') +
                     '<div class="p-3.5">' +
                     '<span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background-color: ' + color + '20; color: ' + color + '">' + (p.category || 'Genel') + '</span>' +
                     '<h3 class="font-bold text-gray-900 mt-2 text-base">' + (p.title || 'İsimsiz Nokta') + '</h3>' +
@@ -141,18 +138,18 @@
             });
         }
 
-        // --- MODERN VE ASLA ASKIDA KALMAYAN FETCH GÜNCELLEME SİSTEMİ ---
+        // --- HATA AYIKLAMALI FETCH SİSTEMİ ---
         window.syncFromDataFolder = async function() {
             const btn = document.getElementById('syncBtn');
             btn.innerHTML = '<span>⏳ Yükleniyor...</span>';
 
             try {
-                // Tarayıcı önbelleğine takılmamak için sonuna zaman damgası (?t=...) eklenir
                 const response = await fetch('data/veriler.js?t=' + Date.now());
-                if (!response.ok) throw new Error('Sunucudan dosya alınamadı.');
+                if (!response.ok) {
+                    throw new Error('Dosya bulunamadı (HTTP ' + response.status + ')');
+                }
 
                 const text = await response.text();
-                // "window.CANDARLI_DATA = [...]" şeklindeki metinden sadece JSON dizisini ayıkla
                 const cleanJson = text.replace(/^window\.CANDARLI_DATA\s*=\s*/, '').replace(/;\s*$/, '');
                 const points = JSON.parse(cleanJson);
 
@@ -161,11 +158,11 @@
                     loadPoints();
                     showToast("✅ Harita güncellendi! (" + points.length + " nokta yüklendi)");
                 } else {
-                    throw new Error('Geçersiz veri formatı.');
+                    throw new Error('Veri formatı hatalı.');
                 }
             } catch (err) {
                 console.error(err);
-                showToast("⚠️ Güncellenemedi! GitHub Pages'in güncellenmesi 30-60 saniye sürebilir, lütfen biraz bekleyip tekrar deneyin.");
+                showToast("❌ Hata Detayı: " + err.message);
             } finally {
                 btn.innerHTML = '<span>🔄 Güncelle</span>';
             }
