@@ -2,17 +2,19 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Çandarlı Fotoğraf ve Keşif Haritası</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Başlangıçta data/veriler.js dosyasını yükler -->
-    <script src="data/veriler.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Başlangıç verisini güvenle yükle -->
+    <script src="data/veriler.js" onerror="console.log('veriler.js yüklenemedi.')"></script>
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #e5e7eb; }
-        #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #cbd5e1; }
+        #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         .custom-popup .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
         .custom-popup .leaflet-popup-content { margin: 0; }
+        .custom-flag-icon { background: transparent; border: none; }
     </style>
 </head>
 <body class="font-sans">
@@ -20,44 +22,55 @@
     <div id="map"></div>
 
     <!-- Üst Başlık, Arama ve Güncelle Butonu -->
-    <div style="z-index: 1000;" class="fixed top-4 left-4 right-4 flex flex-wrap justify-between items-center gap-3 pointer-events-none">
-        <div class="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl pointer-events-auto flex items-center space-x-2 border border-gray-200">
-            <span class="text-2xl">📸</span>
-            <h1 class="font-bold text-gray-800 text-base md:text-lg">Çandarlı Fotoğraf ve Keşif Haritası</h1>
+    <div style="z-index: 1000;" class="fixed top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+        <div class="bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl pointer-events-auto flex items-center space-x-2 border border-gray-200">
+            <span class="text-xl">📸</span>
+            <h1 class="font-bold text-gray-800 text-xs md:text-base">Çandarlı Keşif Haritası</h1>
         </div>
         
-        <div class="flex items-center space-x-2 pointer-events-auto">
+        <div class="flex items-center space-x-1.5 pointer-events-auto">
             <!-- Arama Kutusu -->
             <div class="relative">
-                <input type="text" id="searchInput" placeholder="Kayıtlı yer ara..." oninput="handleSearch(this.value)" class="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 md:w-64 transition">
-                <div id="searchDropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 hidden overflow-hidden max-h-60 overflow-y-auto" style="z-index: 2000;"></div>
+                <input type="text" id="searchInput" placeholder="Yer ara..." oninput="handleSearch(this.value)" class="bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-xl border border-gray-200 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 md:w-52 transition">
+                <div id="searchDropdown" class="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 hidden overflow-hidden max-h-60 overflow-y-auto" style="z-index: 2000;"></div>
             </div>
 
             <!-- Güncelle Düğmesi -->
-            <button onclick="syncFromDataFolder()" id="syncBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-2xl shadow-xl transition flex items-center space-x-2 cursor-pointer">
+            <button onclick="syncFromDataFolder()" id="syncBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-2xl shadow-xl transition flex items-center space-x-1 cursor-pointer text-xs md:text-sm">
                 <span>🔄 Güncelle</span>
             </button>
         </div>
     </div>
 
     <!-- Bildirim Mesajı (Toast) -->
-    <div id="toast" style="z-index: 2000;" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium hidden transition-all">
-        ✅ Harita verileri başarıyla güncellendi ve cihazınıza kaydedildi!
-    </div>
+    <div id="toast" style="z-index: 3000;" class="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 bg-gray-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs md:text-sm text-center font-medium hidden transition-all"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: 'Map data &copy; Google', maxZoom: 20 });
-        const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 20, maxNativeZoom: 17 });
+        if (typeof L === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: 'Google', maxZoom: 20 });
+        const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17 });
+        const osmStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM', maxZoom: 19 });
 
         const map = L.map('map', { center: [38.9335, 26.9325], zoom: 15, zoomControl: false, layers: [googleHybrid] });
         L.control.zoom({ position: 'bottomright' }).addTo(map);
-        L.control.layers({ "Uydu + Sokak İsimleri (Google)": googleHybrid, "Saf Uydu Görünümü (Esri)": esriSatellite }, null, { position: 'bottomleft' }).addTo(map);
+        L.control.layers({ "Uydu + Sokak (Google)": googleHybrid, "Saf Uydu (Esri)": esriSatellite, "Sokak (OSM)": osmStreet }, null, { position: 'bottomleft' }).addTo(map);
 
-        window.addEventListener('load', () => { setTimeout(() => { map.invalidateSize(); }, 200); });
+        setTimeout(() => { map.invalidateSize(); }, 200);
 
         let markersLayer = L.layerGroup().addTo(map);
         let markersMap = {}; 
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+        }
 
         function getCategoryColor(category) {
             if (category === 'Manzara') return '#3b82f6';
@@ -66,6 +79,22 @@
             if (category === 'Resmi Kurum') return '#ef4444';
             if (category === 'Eğitim / Kültür') return '#8b5cf6';
             return '#6b7280';
+        }
+
+        function createFlagIcon(category) {
+            const color = getCategoryColor(category);
+            return L.divIcon({
+                className: 'custom-flag-icon',
+                html: '<svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.5));">' +
+                      '<circle cx="6" cy="37" r="3" fill="#1f2937" stroke="white" stroke-width="1.5"/>' +
+                      '<line x1="6" y1="4" x2="6" y2="37" stroke="white" stroke-width="4" stroke-linecap="round"/>' +
+                      '<line x1="6" y1="4" x2="6" y2="37" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>' +
+                      '<path d="M7 5 C15 2, 23 8, 31 5 L27 14 L31 22 C23 25, 15 19, 7 22 Z" fill="' + color + '" stroke="white" stroke-width="2" stroke-linejoin="round"/>' +
+                      '</svg>',
+                iconSize: [34, 40],
+                iconAnchor: [6, 37],
+                popupAnchor: [8, -34]
+            });
         }
 
         function getStoredPoints() {
@@ -93,81 +122,54 @@
             points.forEach(p => {
                 if (!p.lat || !p.lng) return;
 
-               const color = getCategoryColor(p.category);
-const customIcon = L.divIcon({
-    className: 'custom-flag-icon',
-    html: `
-        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.5));">
-            <!-- Direk Altı Noktası -->
-            <circle cx="6" cy="37" r="3" fill="#1f2937" stroke="white" stroke-width="1.5"/>
-            <!-- Bayrak Direği -->
-            <line x1="6" y1="4" x2="6" y2="37" stroke="white" stroke-width="4" stroke-linecap="round"/>
-            <line x1="6" y1="4" x2="6" y2="37" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
-            <!-- Dalgalı Bayrak Gövdesi -->
-            <path d="M7 5 C15 2, 23 8, 31 5 L27 14 L31 22 C23 25, 15 19, 7 22 Z" fill="${color}" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-    `,
-    iconSize: [34, 40],
-    iconAnchor: [6, 37], // Bayrak direğinin en alt ucu tam koordinata oturur
-    popupAnchor: [8, -34] // Bilgi penceresi bayrağın tam üstünde açılır
-});
-
+                const customIcon = createFlagIcon(p.category);
+                const color = getCategoryColor(p.category);
                 const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(markersLayer);
                 
-                // Kullanıcı görünümü (Düzenle ve Sil butonları yok)
-                marker.bindPopup(`
-                    <div class="w-64">
-                        ${p.photo ? `<img src="${p.photo}" class="w-full h-40 object-cover">` : ''}
-                        <div class="p-3.5">
-                            <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background-color: ${getCategoryColor(p.category)}20; color: ${getCategoryColor(p.category)}">${p.category || 'Genel'}</span>
-                            <h3 class="font-bold text-gray-900 mt-2 text-base">${p.title || 'İsimsiz Nokta'}</h3>
-                            <p class="text-xs text-gray-600 mt-1 leading-relaxed">${p.desc || ''}</p>
-                        </div>
-                    </div>
-                `, { className: 'custom-popup' });
+                marker.bindPopup(
+                    '<div class="w-64">' +
+                    (p.photo ? '<img src="' + p.photo + '" class="w-full h-40 object-cover">' : '') +
+                    '<div class="p-3.5">' +
+                    '<span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background-color: ' + color + '20; color: ' + color + '">' + (p.category || 'Genel') + '</span>' +
+                    '<h3 class="font-bold text-gray-900 mt-2 text-base">' + (p.title || 'İsimsiz Nokta') + '</h3>' +
+                    '<p class="text-xs text-gray-600 mt-1 leading-relaxed">' + (p.desc || '') + '</p>' +
+                    '</div></div>',
+                    { className: 'custom-popup' }
+                );
 
                 markersMap[p.id] = { marker, data: p };
             });
         }
 
-        // Güncelle Düğmesine Basıldığında Çalışan Fonksiyon
-        window.syncFromDataFolder = function() {
+        // --- MODERN VE ASLA ASKIDA KALMAYAN FETCH GÜNCELLEME SİSTEMİ ---
+        window.syncFromDataFolder = async function() {
             const btn = document.getElementById('syncBtn');
             btn.innerHTML = '<span>⏳ Yükleniyor...</span>';
 
-            // data/veriler.js dosyasını önbelleğe takılmadan yeniden oku
-            const oldScript = document.getElementById('dynamicDataScript');
-            if (oldScript) oldScript.remove();
+            try {
+                // Tarayıcı önbelleğine takılmamak için sonuna zaman damgası (?t=...) eklenir
+                const response = await fetch('data/veriler.js?t=' + Date.now());
+                if (!response.ok) throw new Error('Sunucudan dosya alınamadı.');
 
-            const script = document.createElement('script');
-            script.id = 'dynamicDataScript';
-            script.src = 'data/veriler.js?t=' + Date.now();
-            
-            script.onload = function() {
-                if (window.CANDARLI_DATA && Array.isArray(window.CANDARLI_DATA)) {
-                    localStorage.setItem('candarli_user_points', JSON.stringify(window.CANDARLI_DATA));
+                const text = await response.text();
+                // "window.CANDARLI_DATA = [...]" şeklindeki metinden sadece JSON dizisini ayıkla
+                const cleanJson = text.replace(/^window\.CANDARLI_DATA\s*=\s*/, '').replace(/;\s*$/, '');
+                const points = JSON.parse(cleanJson);
+
+                if (Array.isArray(points)) {
+                    localStorage.setItem('candarli_user_points', JSON.stringify(points));
                     loadPoints();
-                    showToast("✅ Harita güncellendi! (" + window.CANDARLI_DATA.length + " nokta yüklendi)");
+                    showToast("✅ Harita güncellendi! (" + points.length + " nokta yüklendi)");
                 } else {
-                    showToast("⚠️ Veri dosyası boş veya okunamadı.");
+                    throw new Error('Geçersiz veri formatı.');
                 }
+            } catch (err) {
+                console.error(err);
+                showToast("⚠️ Güncellenemedi! GitHub Pages'in güncellenmesi 30-60 saniye sürebilir, lütfen biraz bekleyip tekrar deneyin.");
+            } finally {
                 btn.innerHTML = '<span>🔄 Güncelle</span>';
-            };
-
-            script.onerror = function() {
-                showToast("⚠️ 'data/veriler.js' dosyası bulunamadı! Önce yönetici panelinden indirip data klasörüne atın.");
-                btn.innerHTML = '<span>🔄 Güncelle</span>';
-            };
-
-            document.body.appendChild(script);
+            }
         };
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3500);
-        }
 
         function handleSearch(query) {
             const q = (query || '').toLowerCase().trim();
@@ -191,7 +193,7 @@ const customIcon = L.divIcon({
             filtered.forEach(p => {
                 const item = document.createElement('div');
                 item.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition text-sm';
-                item.innerHTML = `<div class="font-bold text-gray-800">${p.title}</div><div class="text-xs font-medium mt-0.5" style="color: ${getCategoryColor(p.category)}">${p.category}</div>`;
+                item.innerHTML = '<div class="font-bold text-gray-800">🚩 ' + p.title + '</div><div class="text-xs font-medium mt-0.5" style="color: ' + getCategoryColor(p.category) + '">' + p.category + '</div>';
                 item.onclick = function() {
                     map.setView([p.lat, p.lng], 18);
                     if (markersMap[p.id]) markersMap[p.id].marker.openPopup();
