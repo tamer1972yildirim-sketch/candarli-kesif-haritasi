@@ -1,1 +1,16 @@
+{
+  "name": "Çandarlı Yönetici Paneli",
+  "short_name": "Yönetici",
+  "start_url": "yonetici.html",
+  "display": "standalone",
+  "background_color": "#cbd5e1",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
 
